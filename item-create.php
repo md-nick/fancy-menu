@@ -16,6 +16,8 @@
                 if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
                     if ($_FILES['image']['size'] === 0) {
                         $error = "Empty file. Please try again.";
+                    } elseif ($_FILES['image']['size'] > $maxSize) {
+                        $error = "File size too large. Please choose a smaller image.";
                     } else {
                         $allowedTypes = ['jped', 'png', 'jpg', 'gif', 'avif'];
                         $imageInfo = pathinfo($_FILES['image']['name']);
@@ -55,10 +57,12 @@
                 'name' => $group['name'],
                 'description' => $group['description'],
                 'price' => $group['price'],
-                'image' => $group['image']                 
+                'image' => $group['image'],
+                'id' => $group['id'],
+                'is_visible' => $group['is_visible']                 
             ];
         }
-    } catch (PDOExecption $e) {
+    } catch (PDOException $e) {
         die($e);
     }
     try { 
@@ -119,7 +123,8 @@
                 <input type="text" name="item_name" placeholder="item name" required>
                 <input type="text" name="item_description" placeholder="description" required>
                 <input type="number" name="item_price" placeholder="price in €" required>
-                <input type="file" name="image" accept=".jpeg, .jpg, .png, .gif, .avif" required>
+                <label for="image">Item image: .jpeg, .jpg, .png, .gif, .avif</label>
+                <input type="file" name="image" id="image" accept=".jpeg, .jpg, .png, .gif, .avif" required>
 
                 <select name="category_select" id="category_select" onchange="loadSubs(this.value)" required>
                     <option value="">-- Please Choose --</option>
@@ -143,18 +148,71 @@
         </div>
         <div class="item-group">
             <?php foreach ($items as $item): ?>
-                <div>
+                <div id="item-<?= $item['id'] ?>">
                     <div class="item">
                         <img src="<?= htmlspecialchars($item['image']) ?>" alt="<?= htmlspecialchars($item['name']) ?>">
                         <h4><?= htmlspecialchars($item['name']) ?></h4>
                         <span>€<?= htmlspecialchars($item['price']) ?></span>
                         <p class="item-desc"><?= htmlspecialchars($item['description']) ?></p>
                     </div>
-                    <form action="item-delete.php" method="post">
-                        <button type="submit">Delete</button>
-                    </form>
+                    <div class="item-categories edit-group">
+                        <div class="edit-categories">
+                            <?php foreach ($categories as $cat): ?>
+                                <?php foreach ($subs as $sub): ?>
+                                    <?php if ($sub['id'] == $item['subcategory_id'] && $cat['id'] == $sub['category_id']): ?>
+                                        <p>Category: <span><?= htmlspecialchars($cat['name']) ?></span></p>
+                                        <p>Sub-Category: <span><?= htmlspecialchars($sub['name']) ?></span></p>
+                                    <?php endif ?>
+                                <?php endforeach ?>
+                            <?php endforeach ?>
+                        </div>
+                        <div>
+                            <button type="button" value="item-<?= $item['id'] ?>" onclick="toggleEdit(this.value)" class="btn btn-add-sub">Edit</button>
+                            <form action="item-delete.php" method="post">
+                                <button type="submit" name="delete_item" class="btn btn-cancel">X</button>
+                            </form>
+                        </div>
+
+                    </div>
                 </div>
-                
+                <div id="edit-item-<?= $item['id'] ?>" class="d-none">
+                    <form action="item-edit.php" method="post" class="item-edit">
+                        <button class="edit-img" onclick="editImg('edit_image')"><img src="<?= htmlspecialchars($item['image']) ?>" alt="<?= htmlspecialchars($item['name']) ?>"></button>
+                        <input type="hidden" name="edit_id" value="<?= $item['id'] ?>">
+                        <input type="text" name="edit_name" value="<?= htmlspecialchars($item['name']) ?>" class="edit_item_name" required>
+                        <input type="number" name="edit_price" value="<?= htmlspecialchars($item['price']) ?>" class="edit_item_price" required>
+                        <textarea type="text" name="edit_description" class="edit_item_description" value="<?= htmlspecialchars($item['description']) ?>"><?= htmlspecialchars($item['description']) ?></textarea>
+                        
+                        <input type="file" name="image" id="edit_image" accept=".jpeg, .jpg, .png, .gif, .avif" class="d-none">
+                        <div class="edit-select">
+                            <?php foreach ($categories as $cat): ?>
+                                <?php foreach ($subs as $sub): ?>
+                                    <?php if ($sub['id'] == $item['subcategory_id'] && $cat['id'] == $sub['category_id']): ?>
+                                        <select name="category_edit" id="category_edit" onchange="editCats(this.value, '<?= $item['id'] ?>')">
+                                            <option value="<?= $cat['id'] ?>">--<?= htmlspecialchars($cat['name']) ?>--</option>
+                                            <?php foreach ($categories as $cat): ?>
+                                                <option value="<?= $cat['id'] ?>"><?= htmlspecialchars($cat['name']) ?></option>
+                                            <?php endforeach ?>
+                                        </select>
+
+                                        <select name="subcategory_edit" id="subcategory_edit_<?= $item['id'] ?>" required>
+                                            <option value="<?= $sub['id'] ?>">--<?= htmlspecialchars($sub['name']) ?>--</option>
+                                            <?php foreach ($subs as $sub): ?>
+                                                <option value="<?= $sub['id'] ?>" data-category="<?= $sub['category_id'] ?>" class="d-none">
+                                                    <?= htmlspecialchars($sub['name']) ?>
+                                                </option>
+                                            <?php endforeach ?>
+                                        </select>
+                                    <?php endif ?>
+                                <?php endforeach ?>
+                            <?php endforeach ?>
+                            <button type="button" onclick="toggleEdit('item-<?= $item['id'] ?>')" id="edit_off" class="btn btn-cancel">Cancel</button>
+                            <button type="submit" name="edit_item" class="btn btn-save">OK</button>
+                        </div>
+                    </form>
+                    
+                </div>
+                                
             <?php endforeach ?>
         </div>
     </main>
@@ -169,7 +227,7 @@
         }
         function loadSubs(categoryId) {
             const subSelect = document.getElementById('subcategory_select');
-            const options = subSelect.querySelectorAll('option[data-category');
+            const options = subSelect.querySelectorAll('option[data-category]');
 
             subSelect.value = "";
             subSelect.disabled = (categoryId === "");
@@ -180,6 +238,43 @@
                 }
             });
         }
+        function toggleEdit(id) {
+            const item = document.getElementById(id);
+            const editItem = document.getElementById('edit-' + id);
+
+            
+                if (item.classList.contains('d-none')) {
+                    item.classList.remove('d-none');
+                    editItem.classList.add('d-none');
+                } else {
+                    item.classList.add('d-none');
+                    editItem.classList.remove('d-none');
+                }
+            
+            
+        }
+        function editCats(editCategoryId, itemId) {
+            console.log('editCategoryId', editCategoryId);
+            const editSelect = document.getElementById('subcategory_edit_' + itemId);
+            const editOptions = editSelect.querySelectorAll('option[data-category]');
+
+            editSelect.value = "";
+
+            editOptions.forEach(editOpt => {
+                if (editOpt.getAttribute('data-category') === editCategoryId) {
+                    editOpt.classList.remove('d-none');
+                } else {
+                    editOpt.classList.add('d-none');
+                }
+            });
+        }
+        function editImg(id) {
+            const btn = document.getElementById(id);
+            if (btn) {
+                btn.click();
+            }
+        }
+
     </script>
     </body>
 </html>

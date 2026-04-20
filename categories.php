@@ -41,7 +41,7 @@
                 'description' => $row['description']                
             ];
         }
-    } catch (PDOExecption $e) {
+    } catch (PDOException $e) {
         die($e);
     }
     try {
@@ -54,7 +54,7 @@
                 'category_id' => $line['category_id']
             ];
         }
-    } catch (PDOExecption $e) {
+    } catch (PDOException $e) {
         die($e);
     }
 ?>

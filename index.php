@@ -34,7 +34,8 @@
                 'description' => $group['description'],
                 'subcategory_id' => $group['subcategory_id'],
                 'price' => $group['price'],
-                'image' => $group['image']
+                'image' => $group['image'],
+                'is_visible' => $group['is_visible']
             ];
         }
     } catch (PDOException $e) {
@@ -89,7 +90,7 @@
                             <h3><?= htmlspecialchars($sub['name']) ?></h3>
                             <div class="item-group">
                                 <?php foreach ($items as $item): ?>
-                                    <?php if($sub['id'] == $item['subcategory_id']): ?>
+                                    <?php if($sub['id'] == $item['subcategory_id'] && $item['is_visible'] = true): ?>
                                         <div class="item">
                                             <img src="<?= htmlspecialchars($item['image']) ?>" alt="<?= htmlspecialchars($item['name']) ?>">
                                             <h4><?= htmlspecialchars($item['name']) ?></h4>

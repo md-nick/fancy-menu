@@ -35,7 +35,7 @@
                 'username' => $row['username']               
             ];
         }
-    } catch (PDOExecption $e) {
+    } catch (PDOException $e) {
         die($e);
     }
 ?>
