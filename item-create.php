@@ -148,7 +148,7 @@
         </div>
         <div class="item-group">
             <?php foreach ($items as $item): ?>
-                <div id="item-<?= $item['id'] ?>">
+                <div id="item-<?= $item['id'] ?>" class="<?php if (!$item['is_visible']): ?><?= 'not-visible' ?><?php endif ?>">
                     <div class="item">
                         <img src="<?= htmlspecialchars($item['image']) ?>" alt="<?= htmlspecialchars($item['name']) ?>">
                         <h4><?= htmlspecialchars($item['name']) ?></h4>
@@ -168,13 +168,23 @@
                         </div>
                         <div>
                             <button type="button" value="item-<?= $item['id'] ?>" onclick="toggleEdit(this.value)" class="btn btn-add-sub">Edit</button>
-                            <form action="item-delete.php" method="post">
-                                <button type="submit" name="delete_item" class="btn btn-cancel">X</button>
-                            </form>
+                            <button type="button" title="delete item" class="btn btn-cancel" onclick="showDialog('<?= $item['id'] ?>')">X</button>                            
                         </div>
-
                     </div>
                 </div>
+                <dialog id="delete-<?= $item['id'] ?>" close class="delete-dialog">
+                    <h5>Do you really want to delete this item?</h5>
+                    <button type="button" class="btn btn-cancel" onclick="closeDialog('<?= $item['id'] ?>')">Cancel</button>
+                    <form action="item-delete.php" method="post">
+                        <?php if ($item['is_visible']): ?>
+                            <label for="hide_item">Hide item <small>(this will keep the item in the database)</small></label>
+                            <button type="submit" name="hide_item" id="hide_item" title="hide" class="btn btn-save">Hide</button>
+                        <?php endif ?>
+                        <label for="delete_item">Permanently delete <small>(no going back)</small></label>
+                        <button type="submit" name="delete_item" id="delete_item" title="delete item" class="btn btn-cancel">Delete</button>
+                        <input type="hidden" name="delete_id" value="<?= $item['id'] ?>">
+                    </form>
+                </dialog>
                 <div id="edit-item-<?= $item['id'] ?>" class="d-none">
                     <form action="item-edit.php" method="post" class="item-edit">
                         <button class="edit-img" onclick="editImg('edit_image')"><img src="<?= htmlspecialchars($item['image']) ?>" alt="<?= htmlspecialchars($item['name']) ?>"></button>
@@ -254,7 +264,6 @@
             
         }
         function editCats(editCategoryId, itemId) {
-            console.log('editCategoryId', editCategoryId);
             const editSelect = document.getElementById('subcategory_edit_' + itemId);
             const editOptions = editSelect.querySelectorAll('option[data-category]');
 
@@ -273,6 +282,14 @@
             if (btn) {
                 btn.click();
             }
+        }
+        function showDialog(id) {
+            const dialog = document.getElementById('delete-' + id);
+            dialog.show();
+        }
+        function closeDialog(id) {
+            const dialog = document.getElementById('delete-' + id);
+            dialog.close();
         }
 
     </script>

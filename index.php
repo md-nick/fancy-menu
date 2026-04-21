@@ -76,10 +76,6 @@
         </div>
     </header>
     <main>
-        <?php if ($error): ?>
-            <p class="error err-login"><?php echo $_SESSION['login_error']; ?></p>
-            <?php unset($_SESSION['login_error']); ?>
-        <?php endif ?>
         <?php foreach ($categories as $cat): ?>
             <section class="categories">
                 <h2><?= htmlspecialchars($cat['name']) ?></h2>
@@ -90,7 +86,7 @@
                             <h3><?= htmlspecialchars($sub['name']) ?></h3>
                             <div class="item-group">
                                 <?php foreach ($items as $item): ?>
-                                    <?php if($sub['id'] == $item['subcategory_id'] && $item['is_visible'] = true): ?>
+                                    <?php if($sub['id'] == $item['subcategory_id'] && $item['is_visible']): ?>
                                         <div class="item">
                                             <img src="<?= htmlspecialchars($item['image']) ?>" alt="<?= htmlspecialchars($item['name']) ?>">
                                             <h4><?= htmlspecialchars($item['name']) ?></h4>
